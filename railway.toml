@@ -1,0 +1,2 @@
+[deploy]
+startCommand = "python auto_bot.py"
