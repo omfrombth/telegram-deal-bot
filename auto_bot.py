@@ -1,101 +1,148 @@
 from telethon import TelegramClient, events
-from telegram import Bot
 import re
-import asyncio
 
-# =========================
-# TELEGRAM API
-# =========================
+# =====================================
+# TELEGRAM API DETAILS
+# =====================================
 
 API_ID = 35571564
+
 API_HASH = "957f6327bae6d5a7821e6ca165415245"
 
-BOT_TOKEN = "8714219900:AAF6g5aPqhlrkarEnEa044hKwegNNqxP3Sfs"
+# =====================================
+# BOT TOKEN
+# =====================================
 
-# =========================
-# CHANNELS
-# =========================
+BOT_TOKEN = "7874219900:AAF6g5aPqhlrkarneAu44hKNwegNNqxP3Sfs"
 
-TARGET_CHANNEL = "lootdealsindia22"
+# =====================================
+# SOURCE CHANNEL
+# =====================================
 
-SOURCE_CHANNELS = [
-    "https://t.me/+FpXKV70NYNY0NzQ1"
-]
+SOURCE_CHANNEL = "https://t.me/+FpXKV70NYNY0NzQ1"
 
-# =========================
-# AFFILIATE
-# =========================
+# =====================================
+# TARGET CHANNEL
+# =====================================
+
+TARGET_CHANNEL = "@lootdealsindia22"
+
+# =====================================
+# AMAZON AFFILIATE TAG
+# =====================================
 
 AMAZON_TAG = "lootdealsi067-21"
 
-FLIPKART_LINK = "https://fktr.in/mafta9q"
+# =====================================
+# FLIPKART AFFILIATE LINK
+# =====================================
 
-# =========================
+FLIPKART_AFFILIATE = "https://fktr.in/mafta9q"
 
-bot = Bot(token=BOT_TOKEN)
+# =====================================
+# TELEGRAM CLIENT
+# =====================================
 
 client = TelegramClient(
-    "session",
+    "bot_session",
     API_ID,
     API_HASH
 )
 
-# Convert all links
-def convert_links(text):
+# =====================================
+# AMAZON LINK REPLACE
+# =====================================
 
-    urls = re.findall(r'https?://\S+', text)
+def replace_amazon_link(text):
 
-    for url in urls:
+    amazon_pattern = r'(https?://(?:www\.)?amazon\.in/[^\s]+)'
 
-        # Amazon
-        if "amazon" in url or "amzn" in url:
+    matches = re.findall(amazon_pattern, text)
 
-            if "tag=" not in url:
-                new_url = f"{url}?tag={AMAZON_TAG}"
+    for link in matches:
+
+        if "tag=" not in link:
+
+            if "?" in link:
+                new_link = f"{link}&tag={AMAZON_TAG}"
+
             else:
-                new_url = url
+                new_link = f"{link}?tag={AMAZON_TAG}"
 
-            text = text.replace(url, new_url)
-
-        # Flipkart
-        elif "flipkart" in url or "fkrt" in url:
-
-            text = text.replace(url, FLIPKART_LINK)
+            text = text.replace(link, new_link)
 
     return text
 
-# Listen messages
-@client.on(events.NewMessage(chats=SOURCE_CHANNELS))
+# =====================================
+# FLIPKART LINK REPLACE
+# =====================================
+
+def replace_flipkart_link(text):
+
+    flipkart_pattern = r'(https?://(?:www\.)?flipkart\.com/[^\s]+)'
+
+    matches = re.findall(flipkart_pattern, text)
+
+    for link in matches:
+
+        text = text.replace(link, FLIPKART_AFFILIATE)
+
+    return text
+
+# =====================================
+# AUTO REPOST HANDLER
+# =====================================
+
+@client.on(events.NewMessage(chats=SOURCE_CHANNEL))
 async def handler(event):
 
     try:
 
-        text = event.raw_text
+        message = event.message.message
 
-        if not text:
+        if not message:
             return
 
-        new_text = convert_links(text)
+        # Replace affiliate links
+        message = replace_amazon_link(message)
+        message = replace_flipkart_link(message)
 
-        # Stylish footer
-        new_text += "\n\n🔥 Best Deal Alert\n🛒 Hurry Up"
+        # Footer
+        footer = "\n\n🔥 Best Deals Daily\n🛒 Join Now 👉 @lootdealsindia22"
 
-        await bot.send_message(
-            chat_id=f"@{TARGET_CHANNEL}",
-            text=new_text
-        )
+        final_message = message + footer
+
+        # If media exists
+        if event.message.media:
+
+            await client.send_file(
+                TARGET_CHANNEL,
+                event.message.media,
+                caption=final_message
+            )
+
+        else:
+
+            await client.send_message(
+                TARGET_CHANNEL,
+                final_message
+            )
 
         print("Posted Successfully")
 
     except Exception as e:
-        print("Error:", e)
+        print(e)
+
+# =====================================
+# START BOT
+# =====================================
 
 async def main():
 
-    print("Bot Running...")
+    await client.start(bot_token=BOT_TOKEN)
 
-    await client.start()
+    print("Bot Running Successfully...")
 
     await client.run_until_disconnected()
 
-asyncio.run(main())
+client.loop.run_until_complete(main())
