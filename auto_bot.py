@@ -1,44 +1,81 @@
+from telethon import TelegramClient, events
 from telegram import Bot
+import re
 import asyncio
-import random
 
-TOKEN = "8714219900:AAF6g5aPqhlrkarnEa044hKWegNNqxP3Sfs"
-CHANNEL = "@lootdealsindia22"
+# =========================
+# TELEGRAM API
+# =========================
 
-bot = Bot(token=TOKEN)
+API_ID = 35571564
+API_HASH = "957f6327bae6d5a7821e6ca165415245"
 
-captions = [
-    "🔥 Loot Deal Alert",
-    "⚡ Heavy Discount",
-    "💥 Limited Time Offer",
-    "🛒 Amazon Best Deal",
+BOT_TOKEN = "8714219900:AAF6g5aPqhlrkarEnEa044hKwegNNqxP3Sfs"
+
+# =========================
+# CHANNEL SETTINGS
+# =========================
+
+TARGET_CHANNEL = "lootdealsindia22"
+
+SOURCE_CHANNELS = [
+    "https://t.me/+FpXKV70NYNY0NzQ1"
 ]
 
-hashtags = [
-    "#AmazonDeals #LootDeal",
-    "#BestOffer #Discount",
-    "#ShoppingDeals #AmazonSale",
-]
+AFFILIATE_TAG = "lootdealsi067-21"
 
-deal_links = [
-    "https://amzn.to/43newb9",
-]
+# =========================
 
-async def auto_post():
-    while True:
-        link = random.choice(deal_links)
-        caption = random.choice(captions)
-        tags = random.choice(hashtags)
+bot = Bot(token=BOT_TOKEN)
 
-        text = f"{caption}\n\n{link}\n\n{tags}"
+client = TelegramClient(
+    "session",
+    API_ID,
+    API_HASH
+)
+
+# Replace Amazon links
+def replace_amazon_links(text):
+
+    links = re.findall(r'https?://amzn\.to/\S+', text)
+
+    for link in links:
+
+        if "tag=" not in link:
+            new_link = f"{link}?tag={AFFILIATE_TAG}"
+            text = text.replace(link, new_link)
+
+    return text
+
+# Listen new posts
+@client.on(events.NewMessage(chats=SOURCE_CHANNELS))
+async def handler(event):
+
+    try:
+
+        text = event.raw_text
+
+        if not text:
+            return
+
+        new_text = replace_amazon_links(text)
 
         await bot.send_message(
-            chat_id=CHANNEL,
-            text=text
+            chat_id=f"@{TARGET_CHANNEL}",
+            text=new_text
         )
 
-        print("Posted:", text)
+        print("Posted Successfully")
 
-        await asyncio.sleep(30)
+    except Exception as e:
+        print("Error:", e)
 
-asyncio.run(auto_post())
+async def main():
+
+    print("Bot Started")
+
+    await client.start()
+
+    await client.run_until_disconnected()
+
+asyncio.run(main())
