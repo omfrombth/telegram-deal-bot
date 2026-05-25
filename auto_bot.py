@@ -13,7 +13,7 @@ API_HASH = "957f6327bae6d5a7821e6ca165415245"
 # BOT TOKEN
 # =====================================
 
-BOT_TOKEN = "7874219900:AAF6g5aPqhlrkarneAu44hKNwegNNqxP3Sfs"
+BOT_TOKEN = "8714219900:AAF8qQwSiNlm_qRQc673SGLndzEEdUkGBW4"
 
 # =====================================
 # SOURCE CHANNEL
